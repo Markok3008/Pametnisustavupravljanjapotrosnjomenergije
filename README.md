@@ -11,7 +11,7 @@ SEMINARSKI RAD
 
 ### Pametni sustav upravljanja potrošnjom energije temeljen na ESP32-H2 mikrokontroleru
 
-**Marko Kresić**Osijek, 2026.
+**Marko Kresić** Osijek, 2026.
 
 Sadržaj
 -------
@@ -134,7 +134,14 @@ Zadaća zigbee\_tx\_task periodički prima podatke iz xPowerQueue te ih šalje p
 Tablica komponenti
 ------------------
 
-**KomponentaModelNapomena**MikrokontrolerESP32-H2-DEV-KIT-N4-MRISC-V arhitektura, IEEE 802.15.4 (Zigbee/Thread). Senzor strujeACS712 (5A, ADC1)Mjeri struju potrošača na GPIO1 preko djelitelja napona. Aktuator1-Kanalni 5V Relej ModulGalvanski izoliran relej za preklapanje trošila na GPIO4. Korisnički ulazTaktilno tipkaloRučno preklapanje releja putem HW prekida na GPIO9. IndikacijaCrvena LED 5mm + 220ΩPrikaz statusa rada i releja na GPIO8. Zaštitni otpornici2x 10 kΩNaponski djelitelj na izlazu ACS712 senzora.
+| Komponenta | Model / Opis | Uloga u sustavu |
+| :--- | :--- | :--- |
+| Mikrokontroler | ESP32-H2-DEV-KIT-N4-M | RISC-V arhitektura, IEEE 802.15.4 (Zigbee/Thread) |
+| Senzor struje | ACS712 (5A modul) | Mjerenje struje potrošača i slanje analognog signala |
+| Aktuator | 1-Kanalni 5V Relej Modul | Upravljanje uključenjem/isključenjem potrošača[cite: 1] |
+| Ulaz | Taktilno tipkalo | Ručna kontrola i GPIO prekid (Interrupt)[cite: 1] |
+| Signalizacija | 5mm LED + 220Ω otpornik | Prikaz stanja sustava[cite: 1] |
+| Zaštita ADC-a | Djelitelj napona (2x 10kΩ) | Smanjenje izlaznog napona senzora s 5V na sigurna 3.3V za ADC |
 
 Zaključak
 ---------
@@ -149,5 +156,3 @@ Literatura
 *   Espressif Systems, _ESP-IDF Programming Guide - ADC & FreeRTOS API_, 2025.
     
 *   Allegro MicroSystems, _ACS712 Current Sensor Datasheet_.
-    
-*   Juraj Benić, _Predavanja iz kolegija Ugrađeni sustavi_, Fakultet primijenjene matematike i informatike Osijek, 2026.
