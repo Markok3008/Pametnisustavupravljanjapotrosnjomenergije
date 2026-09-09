@@ -1,81 +1,153 @@
-# FAKULTET PRIMIJENJENE MATEMATIKE I INFORMATIKE OSIJEK
-## UGRAĐENI SUSTAVI
+SVEUČILIŠTE JOSIPA JURJA STROSSMAYERA U OSIJEKU
+===============================================
 
-### SEMINARSKI RAD / PROJEKT
-# Pametni sustav upravljanja potrošnjom energije temeljen na ESP32-H2
+FAKULTET PRIMIJENJENE MATEMATIKE I INFORMATIKE
+==============================================
 
-**Kolegij:** Ugrađeni sustavi  
-**Nastavnik:** dr. sc. Juraj Benić[cite: 2]  
-**Asistent:** Mislav Milinković[cite: 2]  
-**Student:** Marko Kresić 
-Osijek, 2026.
+**UGRAĐENI SUSTAVI**
 
----
+SEMINARSKI RAD
+--------------
 
-## Sadržaj
-1. [Uvod](#uvod)
-2. [Opis sustava](#opis-sustava)
-3. [Tehničke specifikacije i komponente](#tehničke-specifikacije-i-komponente)
-4. [Softverska arhitektura i FreeRTOS](#softverska-arhitektura-i-freertos)
-5. [Shema spajanja i pinout](#shema-spajanja-i-pinout)
-6. [Izvorni kôd projekta (main.c)](#izvorni-kôd-projekta-mainc)
-7. [CMake konfiguracija](#cmake-konfiguracija)
-8. [Upute za prevođenje i pokretanje (ESP-IDF)](#upute-za-prevođenje-i-pokretanje-esp-idf)
-9. [Bodovna tablica projekta](#bodovna-tablica-projekta)
-10. [Zaključak](#zaključak)
-11. [Literatura](#literatura)
+### Pametni sustav upravljanja potrošnjom energije temeljen na ESP32-H2 mikrokontroleru
 
----
+**Marko Kresić**Osijek, 2026.
 
-## Uvod
-U sklopu ovog projekta izrađen je ugrađeni sustav za nadzor i upravljanje potrošnjom električne energije u stvarnom vremenu. Sustav se temelji na mikrokontroleru **ESP32-H2** (RISC-V arhitektura) te koristi **ACS712** senzor struje za izračun efektivne struje ($I_{RMS}$) i procjenu snage. Korisnik može upravljati priključenim potrošačem putem relej modula ili fizičkog tipkala, dok se mjerne vrijednosti bežično šalju putem Zigbee mreže.
+Sadržaj
+-------
 
-Projekt je u potpunosti razvijen u službenom **ESP-IDF** razvojnom okruženju u jeziku C, uz korištenje **FreeRTOS** operacijskog sustava za real-time upravljanje zadaćama i optimizaciju potrošnje energije.
+1.  [Uvod](https://www.google.com/search?q=#uvod)
+    
+2.  [Opis sustava](https://www.google.com/search?q=#opis-sustava)
+    
+3.  [Tehničke specifikacije](https://www.google.com/search?q=#tehničke-specifikacije)
+    
+    *   [Hardver](https://www.google.com/search?q=#hardver)
+        
+    *   [Softver](https://www.google.com/search?q=#softver)
+        
+4.  [Implementacija](https://www.google.com/search?q=#implementacija)
+    
+    *   [Struktura programa i FreeRTOS](https://www.google.com/search?q=#struktura-programa-i-freertos)
+        
+    *   [ADC uzorkovanje i izračun efektivne struje](https://www.google.com/search?q=#adc-uzorkovanje-i-izracun-efektivne-struje)
+        
+    *   [Upravljanje aktuatorom i HW prekidi](https://www.google.com/search?q=#upravljanje-aktuatorom-i-hw-prekidi)
+        
+    *   [Zigbee bežična komunikacija](https://www.google.com/search?q=#zigbee-bezicna-komunikacija)
+        
+5.  [Tablica komponenti](https://www.google.com/search?q=#tablica-komponenti)
+    
+6.  [Zaključak](https://www.google.com/search?q=#zakljucak)
+    
+7.  [Literatura](https://www.google.com/search?q=#literatura)
+    
 
----
+Uvod
+----
 
-## Opis sustava
-Sustav obavlja sljedeće ključne funkcionalnosti:
-* **Mjerenje u stvarnom vremenu**: Analogni ulaz (ADC) mikrokontrolera kontinuirano očitava naponski signal sa senzora ACS712 te izračunava radnu snagu ($P = U \cdot I$).
-* **Aktualizacija i zaštita**: Relej modul omogućuje ručno ili automatsko isključivanje potrošača u slučaju preopterećenja.
-* **Bežična mesh komunikacija**: Integrirani IEEE 802.15.4 radijski sklop šalje izmjerenu snagu na Zigbee koordinator.
-* **Signalizacija**: LED indikator prikazuje trenutni status rada sustava i mrežnu povezanost.
-* **Upravljanje energijom**: Implementirane su FreeRTOS zadaće i mogućnost ulaska u *deep-sleep* način rada radi štednje energije.
+U ovom seminarskom radu opisan je pametni sustav za upravljanje i nadzor potrošnje električne energije u stvarnom vremenu koji koristi mikrokontroler **ESP32-H2** kao središnju upravljačku jedinicu. Cilj projekta bio je izraditi funkcionalan ugrađeni sustav koji mjeri struju priključenog potrošača pomoću analognog senzora **ACS712**, izračunava radnu snagu te na temelju izmjerenih vrijednosti upravlja napajanjem potrošača putem relej modula. Uz lokalno upravljanje fizičkim tipkalom i vanjskim prekidima (ISR), sustav podržava bežičnu komunikaciju putem **Zigbee (IEEE 802.15.4)** protokola. Mjerne vrijednosti i status uređaja šalju se na centralni Zigbee koordinator (npr. SONOFF USB Dongle). Cijeli sustav realiziran je na eksperimentalnoj pločici (_breadboard_) i programiran u izvornom **ESP-IDF** okruženju koristeći **FreeRTOS** operacijski sustav za real-time upravljanje višezadaćnim radom\[cite: 1, 2\].
 
----
+Opis sustava
+------------
 
-## Tehničke specifikacije i komponente
+Sustav se sastoji od pet glavnih komponenti koje međusobno komuniciraju kako bi osigurale željenu funkcionalnost:
 
-| Komponenta | Model / Opis | Uloga u sustavu |
-| :--- | :--- | :--- |
-| Mikrokontroler | ESP32-H2-DEV-KIT-N4-M | RISC-V arhitektura, IEEE 802.15.4 (Zigbee/Thread) |
-| Senzor struje | ACS712 (5A modul) | Mjerenje struje potrošača i slanje analognog signala |
-| Aktuator | 1-Kanalni 5V Relej Modul | Upravljanje uključenjem/isključenjem potrošača[cite: 1] |
-| Ulaz | Taktilno tipkalo | Ručna kontrola i GPIO prekid (Interrupt)[cite: 1] |
-| Signalizacija | 5mm LED + 220Ω otpornik | Prikaz stanja sustava[cite: 1] |
-| Zaštita ADC-a | Djelitelj napona (2x 10kΩ) | Smanjenje izlaznog napona senzora s 5V na sigurna 3.3V za ADC |
+*   **ACS712 (5A)**: Analogni senzor struje koji komunicira s ESP32-H2 putem **ADC1** sučelja preko naponskog djelitelja (10 kΩ / 10 kΩ) radi zaštite ulaznog pina.
+    
+*   **ESP32-H2**: Prima analogne signale, izračunava efektivnu struju i snagu, upravlja FreeRTOS zadaćama, obrađuje vanjske prekide te šalje podatke na Zigbee mrežu.
+    
+*   **Relej modul (5V s optokouplerom)**: Aktuator spojen na **GPIO4** koji galvanski odvaja upravljački sklop i preklapa strujni krug potrošača.
+    
+*   **Taktilno tipkalo**: Korisnički ulaz spojen na **GPIO9** koji putem vanjskog prekida (ISR) omogućuje ručno uključivanje i isključivanje releja.
+    
+*   **LED indikator**: Statusna dioda spojena na **GPIO8** s otpornikom od 220 Ω za vizualnu signalizaciju stanja releja.
+    
 
----
+Tehničke specifikacije
+----------------------
 
-## Softverska arhitektura i FreeRTOS
+### Hardver
 
-Aplikacija je strukturirana u nekoliko neovisnih FreeRTOS zadaća koje komuniciraju putem redova poruka (*Queues*) i semafora (*Semaphores*)[cite: 1]:
+#### ESP32-H2-DEV-KIT-N4-M
 
-1. **`adc_measure_task`**: Periodički (svakih 500 ms) uzorkuje ADC ulaz, primjenjuje kalibraciju te šalje izračunatu snagu u `xPowerQueue`[cite: 1].
-2. **`control_task`**: Čeka poruke s tipkala ili mrežne naredbe te upravlja GPIO pinom releja i LED indikatorom[cite: 1].
-3. **`zigbee_tx_task`**: Preuzima podatke o snazi iz reda poruka i šalje ih putem ESP-Zigbee stoga[cite: 1].
-4. **`gpio_isr_handler`**: Vanjski prekid na pritisak tipkala koji putem semafora `xButtonSemaphore` trenutačno mijenja stanje releja[cite: 1].
+ESP32-H2 se temelji na **32-bitnoj RISC-V** arhitekturi (radni takt 96 MHz). Sadrži integrirani IEEE 802.15.4 radijski modul za Zigbee 3.0 i Thread bežičnu komunikaciju.
 
----
+#### ACS712 senzor struje (5A)
 
-## Shema spajanja i pinout
+Analogni senzor na bazi Hallovog efekta s osjetljivošću od **185 mV/A**. Mjeri izmjeničnu ili istosmjernu struju potrošača i daje analogni izlazni napon.
 
-```text
-ESP32-H2 Pinout:
-──────────────────────────────────────────────────────────
-GPIO 1  ---> ACS712 Output (preko naponskog djelitelja 10k/10k)
-GPIO 4  ---> Relej Modul (IN)
-GPIO 8  ---> LED Indikator (+ 220Ω otpornik prema GND)
-GPIO 9  ---> Tipkalo (spojeno prema GND, interni Pull-Up)
-5V/VBUS ---> VCC Relej Modula / VCC ACS712 Senzora
-GND     ---> Zajednička masa (GND svih komponenti)
+#### Relej modul 5V s optokouplerom
+
+Jednokanalni relejni modul s optičkom izolacijom (_Songle SRD-05VDC-SL-C_). Podržava _High-Level_ okidanje na 3.3V logičkoj razini.
+
+#### Periferija i ulazno/izlazni krugovi
+
+*   **Tipkalo**: Spojeno na GPIO9 uz interni _Pull-Up_ otpornik.
+    
+*   **LEDica**: Spojena na GPIO8 uz serijski zaštitni otpornik od 220 Ω.
+    
+*   **Naponski djelitelj**: Dva otpornika od 10 kΩ spojena na izlaz ACS712 senzora za spuštanje maksimalnog napona na sigurna 3.3V za ADC ulaz (GPIO1).
+    
+
+### Softver
+
+*   **ESP-IDF v5.x i FreeRTOS**: Razvoj u C jeziku u VS Code / ESP-IDF okruženju. Korišteni upravljački moduli: esp\_adc, driver/gpio, freertos/task.h, freertos/queue.h, freertos/semphr.h.
+    
+*   **Zigbee 3.0 Stack**: Implementacija profila za bežično slanje telemetrijskih podataka na koordinator.
+    
+
+Implementacija
+--------------
+
+### Struktura programa i FreeRTOS
+
+Program je podijeljen na tri nezavisne FreeRTOS zadaće (_tasks_), vanjski prekid (ISR) i međuzadaćnu komunikaciju putem _Queue-a_ i _Semafora_:
+
+1.  adc\_measure\_task: Svakih 500 ms uzorkuje ADC1 ulaz, računa efektivnu struju i snagu te šalje podatak u xPowerQueue.
+    
+2.  control\_task: Čeka semafor iz ISR-a tipkala ili nadzire preopterećenje te upravlja relejem i LED-om.
+    
+3.  zigbee\_tx\_task: Preuzima izmjerenu snagu i šalje je na bežičnu Zigbee mrežu.
+    
+
+### ADC uzorkovanje i izračun efektivne struje
+
+Za izračun efektivne vrijednosti izmjenične struje primjenjuje se formula korijena srednje kvadratne vrijednosti uzimanjem 100 uzoraka:C
+
+Plain textANTLR4BashCC#CSSCoffeeScriptCMakeDartDjangoDockerEJSErlangGitGoGraphQLGroovyHTMLJavaJavaScriptJSONJSXKotlinLaTeXLessLuaMakefileMarkdownMATLABMarkupObjective-CPerlPHPPowerShell.propertiesProtocol BuffersPythonRRubySass (Sass)Sass (Scss)SchemeSQLShellSwiftSVGTSXTypeScriptWebAssemblyYAMLXML`   uint8_t sample_count = 100;  long sum_squares = 0;  for (int i = 0; i < sample_count; i++) {      adc_oneshot_read(adc_handle, ADC_CHANNEL, &raw_val);      int diff = raw_val - 2047; // Odstupanje od referentne točke      sum_squares += (diff * diff);      vTaskDelay(pdMS_TO_TICKS(2));  }  float mean_square = (float)sum_squares / sample_count;  float rms_raw = sqrtf(mean_square);   `
+
+Dobivena vrijednost pretvara se u struju u amperima te množi s mrežnim naponom (230V) radi procjene snage u vatima.
+
+### Upravljanje aktuatorom i HW prekidi
+
+Pritisak na tipkalo okida vanjski HW prekid (GPIO\_INTR\_NEGEDGE) na GPIO9 pinu. Prekidna rutina ne blokira sustav već predaje semafor: C
+
+Plain textANTLR4BashCC#CSSCoffeeScriptCMakeDartDjangoDockerEJSErlangGitGoGraphQLGroovyHTMLJavaJavaScriptJSONJSXKotlinLaTeXLessLuaMakefileMarkdownMATLABMarkupObjective-CPerlPHPPowerShell.propertiesProtocol BuffersPythonRRubySass (Sass)Sass (Scss)SchemeSQLShellSwiftSVGTSXTypeScriptWebAssemblyYAMLXML`   static void IRAM_ATTR gpio_button_isr_handler(void* arg) {      BaseType_t xHigherPriorityTaskWoken = pdFALSE;      xSemaphoreGiveFromISR(xButtonSemaphore, &xHigherPriorityTaskWoken);      if (xHigherPriorityTaskWoken) {          portYIELD_FROM_ISR();      }  }   `
+
+Također, u control\_task-u je implementirano automatsko isključivanje u slučaju preopterećenja.
+
+### Zigbee bežična komunikacija
+
+Zadaća zigbee\_tx\_task periodički prima podatke iz xPowerQueue te ih šalje prema Zigbee koordinatoru (SONOFF USB Dongle).
+
+Tablica komponenti
+------------------
+
+**KomponentaModelNapomena**MikrokontrolerESP32-H2-DEV-KIT-N4-MRISC-V arhitektura, IEEE 802.15.4 (Zigbee/Thread). Senzor strujeACS712 (5A, ADC1)Mjeri struju potrošača na GPIO1 preko djelitelja napona. Aktuator1-Kanalni 5V Relej ModulGalvanski izoliran relej za preklapanje trošila na GPIO4. Korisnički ulazTaktilno tipkaloRučno preklapanje releja putem HW prekida na GPIO9. IndikacijaCrvena LED 5mm + 220ΩPrikaz statusa rada i releja na GPIO8. Zaštitni otpornici2x 10 kΩNaponski djelitelj na izlazu ACS712 senzora.
+
+Zaključak
+---------
+
+U okviru ovog seminarskog rada uspješno je realiziran pametni sustav za nadzor i upravljanje potrošnjom električne energije. Projekt je demonstrirao primjenu **ADC uzorkovanja** za proračun RMS struje, rad s **vanjskim prekidima (ISR)** i **FreeRTOS** mehanizmima unutar **ESP-IDF** okruženja te osnove **Zigbee bežične komunikacije**. Sustav je stabilan, siguran i sve planirane funkcionalnosti su uspješno implementirane.
+
+Literatura
+----------
+
+*   Espressif Systems, _ESP32-H2 Technical Reference Manual_, 2024.
+    
+*   Espressif Systems, _ESP-IDF Programming Guide - ADC & FreeRTOS API_, 2025.
+    
+*   Allegro MicroSystems, _ACS712 Current Sensor Datasheet_.
+    
+*   Juraj Benić, _Predavanja iz kolegija Ugrađeni sustavi_, Fakultet primijenjene matematike i informatike Osijek, 2026.
