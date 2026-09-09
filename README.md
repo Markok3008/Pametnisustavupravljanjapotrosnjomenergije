@@ -111,19 +111,34 @@ Program je podijeljen na tri nezavisne FreeRTOS zadaće (_tasks_), vanjski preki
 3.  zigbee\_tx\_task: Preuzima izmjerenu snagu i šalje je na bežičnu Zigbee mrežu.
     
 
-### ADC uzorkovanje i izračun efektivne struje
+### ADC uzorkovanje i izračun efektivne struje (RMS)
+Za izračun efektivne vrijednosti izmjenične struje primjenjuje se matematički obrazac izračuna korijena srednje kvadratne vrijednosti:
+$$I_{RMS} = \sqrt{\frac{1}{N} \sum_{i=1}^{N} (I_i - I_{off})^2}$$
 
-Za izračun efektivne vrijednosti izmjenične struje primjenjuje se formula korijena srednje kvadratne vrijednosti uzimanjem 100 uzoraka:C
+U kôdu se očitava $N=100$ uzoraka unutar jedne periode:
+```c
+long sum_squares = 0;
+for (int i = 0; i < ADC_SAMPLES; i++) {
+    adc_oneshot_read(adc_handle, ADC_CHANNEL, &raw_val);
+    int diff = raw_val - 2047; // Odstupanje od srednje točke (1.65V)
+    sum_squares += (diff * diff);
+    vTaskDelay(pdMS_TO_TICKS(2));
+}
+float mean_square = (float)sum_squares / ADC_SAMPLES;
+float rms_raw = sqrtf(mean_square);
 
-Plain textANTLR4BashCC#CSSCoffeeScriptCMakeDartDjangoDockerEJSErlangGitGoGraphQLGroovyHTMLJavaJavaScriptJSONJSXKotlinLaTeXLessLuaMakefileMarkdownMATLABMarkupObjective-CPerlPHPPowerShell.propertiesProtocol BuffersPythonRRubySass (Sass)Sass (Scss)SchemeSQLShellSwiftSVGTSXTypeScriptWebAssemblyYAMLXML`   uint8_t sample_count = 100;  long sum_squares = 0;  for (int i = 0; i < sample_count; i++) {      adc_oneshot_read(adc_handle, ADC_CHANNEL, &raw_val);      int diff = raw_val - 2047; // Odstupanje od referentne točke      sum_squares += (diff * diff);      vTaskDelay(pdMS_TO_TICKS(2));  }  float mean_square = (float)sum_squares / sample_count;  float rms_raw = sqrtf(mean_square);   `
-
-Dobivena vrijednost pretvara se u struju u amperima te množi s mrežnim naponom (230V) radi procjene snage u vatima.
 
 ### Upravljanje aktuatorom i HW prekidi
 
 Pritisak na tipkalo okida vanjski HW prekid (GPIO\_INTR\_NEGEDGE) na GPIO9 pinu. Prekidna rutina ne blokira sustav već predaje semafor: C
 
-Plain textANTLR4BashCC#CSSCoffeeScriptCMakeDartDjangoDockerEJSErlangGitGoGraphQLGroovyHTMLJavaJavaScriptJSONJSXKotlinLaTeXLessLuaMakefileMarkdownMATLABMarkupObjective-CPerlPHPPowerShell.propertiesProtocol BuffersPythonRRubySass (Sass)Sass (Scss)SchemeSQLShellSwiftSVGTSXTypeScriptWebAssemblyYAMLXML`   static void IRAM_ATTR gpio_button_isr_handler(void* arg) {      BaseType_t xHigherPriorityTaskWoken = pdFALSE;      xSemaphoreGiveFromISR(xButtonSemaphore, &xHigherPriorityTaskWoken);      if (xHigherPriorityTaskWoken) {          portYIELD_FROM_ISR();      }  }   `
+static void IRAM_ATTR gpio_button_isr_handler(void* arg) {
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    xSemaphoreGiveFromISR(xButtonSemaphore, &xHigherPriorityTaskWoken);
+    if (xHigherPriorityTaskWoken) {
+        portYIELD_FROM_ISR();
+    }
+}
 
 Također, u control\_task-u je implementirano automatsko isključivanje u slučaju preopterećenja.
 
