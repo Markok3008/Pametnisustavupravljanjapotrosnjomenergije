@@ -116,7 +116,7 @@ Za izračun efektivne vrijednosti izmjenične struje primjenjuje se matematički
 $$I_{RMS} = \sqrt{\frac{1}{N} \sum_{i=1}^{N} (I_i - I_{off})^2}$$
 
 U kôdu se očitava $N=100$ uzoraka unutar jedne periode:
-'''c
+ ```c
 long sum_squares = 0;
 for (int i = 0; i < ADC_SAMPLES; i++) {
     adc_oneshot_read(adc_handle, ADC_CHANNEL, &raw_val);
@@ -124,14 +124,17 @@ for (int i = 0; i < ADC_SAMPLES; i++) {
     sum_squares += (diff * diff);
     vTaskDelay(pdMS_TO_TICKS(2));
 }
+
 float mean_square = (float)sum_squares / ADC_SAMPLES;
 float rms_raw = sqrtf(mean_square);
 
+```
 
 ### Upravljanje aktuatorom i HW prekidi
 
 Pritisak na tipkalo okida vanjski HW prekid (GPIO\_INTR\_NEGEDGE) na GPIO9 pinu. Prekidna rutina ne blokira sustav već predaje semafor: C
 
+``` c
 static void IRAM_ATTR gpio_button_isr_handler(void* arg) {
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
     xSemaphoreGiveFromISR(xButtonSemaphore, &xHigherPriorityTaskWoken);
@@ -140,6 +143,7 @@ static void IRAM_ATTR gpio_button_isr_handler(void* arg) {
     }
 }
 
+```
 Također, u control\_task-u je implementirano automatsko isključivanje u slučaju preopterećenja.
 
 ### Zigbee bežična komunikacija
