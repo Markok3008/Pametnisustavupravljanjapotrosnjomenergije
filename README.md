@@ -7,7 +7,7 @@
 **Kolegij:** Ugrađeni sustavi  
 **Nastavnik:** dr. sc. Juraj Benić[cite: 2]  
 **Asistent:** Mislav Milinković[cite: 2]  
-**Student:** [Vaše Ime i Prezime]  
+**Student:** Marko Kresić 
 Osijek, 2026.
 
 ---
