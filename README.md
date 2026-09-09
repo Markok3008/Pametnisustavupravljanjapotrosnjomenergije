@@ -116,7 +116,7 @@ Za izračun efektivne vrijednosti izmjenične struje primjenjuje se matematički
 $$I_{RMS} = \sqrt{\frac{1}{N} \sum_{i=1}^{N} (I_i - I_{off})^2}$$
 
 U kôdu se očitava $N=100$ uzoraka unutar jedne periode:
-```c
+'''c
 long sum_squares = 0;
 for (int i = 0; i < ADC_SAMPLES; i++) {
     adc_oneshot_read(adc_handle, ADC_CHANNEL, &raw_val);
